@@ -1,73 +1,50 @@
 <template>
   <div class="home">
-      <h1>Home</h1>
-
-      <!-- case 3: what if to search & filter a name from the names below -->
-      <input type="text" v-model="search">
-      <p>search term - {{ search }}</p>
-      <!-- case 2 output -->
-       <div v-for="name in matchingNames" :key="name">{{ name }}</div>
-
-      <!-- case 6 & 7 -->
-       <button @click="handleClick">stop watching</button>
-
-
-      <!-- case 1 output -->
-      <!--p>{{ name }}</p-->
-
+    <h1>Home</h1>
+    <div v-if="error">{{ error }}</div>
+    <div v-if="posts.length">
+      <PostList :posts="posts" />
+    </div>
+    <div v-else>Loading...</div>
+    
+    <button @click="showPosts = !showPosts">toggle posts</button>
+    <button @click="posts.pop()">delete a post</button>
   </div>
 </template>
 
 <script>
-import { computed, ref, watch, watchEffect } from 'vue';
+import PostList from '../components/PostList.vue'
+import { ref } from 'vue';
 
 export default {
   name: 'Home',
-
+  components: { PostList },
   setup() {
-    // case 3 to search & filter name from name array below
-    const search = ref('')
+    const posts = ref([])
+    const error = ref(null)
 
-    // case 2
-    const names = ref(['mario','yoshi','luigi','toad', 'bowser', 'kooga','peach'])
-
-    // case 4 use this Watch function without wantiing to use the value in it
-    // watch(search, () => {
-    //   console.log('watch function ran')
-    // })
-
-    //case 5 watchEffect function if want use value inside the function 
-    // watchEffect(() => {
-    //   console.log('watchEffect function ran', search.value)
-    // })
-
-    // case 6 to stop watch function
-    const stopWatch = watch(search, () => {
-      console.log('watch function ran')
-    })
-
-    // case 7 stop watchEffect function
-    const stopEffect = watchEffect(() => {
-      console.log('watchEffect function ran', search.value)
-    })
-
-    // case 3 to search & filter name from name array
-    const matchingNames = computed(() => {
-      return names.value.filter((name) => name.includes(search.value))
-    })
-
-    const handleClick = () => {
-      stopWatch()
-      stopEffect()
+    // async function to fetch data from data local folder from db.json
+    const load = async () => {
+      try {
+        // create a variebel
+        let data = await fetch('http://localhost:3000/posts') //to perform fetch and wait the fetch to complete, respond will store in data 'variable'
+        //console.log(data)
+        // below condition is : if the data is not OK
+        if (!data.ok) {
+          throw Error('no data available')
+        }
+        // if data ok , no error then
+        posts.value = await data.json()
+      }
+      catch (err) {
+        error.value = err.message
+        console.log(err.message)
+        console.log(error.value)
+      }
     }
+    load()
 
-    return { names, search, matchingNames, handleClick }
-          // case 1 
-          // const name = computed(() => {
-          //   return 'shaun'
-          // })
-          
-          // return { name }
+    return { posts, error }
   }
 }
 </script>
